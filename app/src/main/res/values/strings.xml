@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">TomTom</string>
     <string name="near_by">Near by</string>
+    <string name="no_data_available">No data available</string>
 </resources>

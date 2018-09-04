@@ -1,16 +1,23 @@
 package com.example.tomse.tomtom;
 
+import android.content.Context;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView mRecyclerView;
     private RecyclerView.Adapter recAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
+    private TextView emptyView;
 
 
     @Override
@@ -36,7 +44,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
+        final ProgressBar loadingCircle = findViewById(R.id.loading_spinner);
+        loadingCircle.setVisibility(View.VISIBLE);
 
 
         Retrofit retrofit = new Retrofit.Builder()
@@ -84,12 +93,29 @@ public class MainActivity extends AppCompatActivity {
                /* ListView listView = findViewById(R.id.list);
                 ListAdapter quakeAdapter = new QuakeAdapter(getApplicationContext(), earthquakeList);
                 listView.setAdapter(quakeAdapter);*/
+
+                loadingCircle.setVisibility(View.GONE);
+
+                //to see the loading circle for 5 seconds for testing purposes
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
                 mRecyclerView = findViewById(R.id.my_recycler_view);
                 mRecyclerView.setHasFixedSize(true);
                 mLayoutManager = new GridLayoutManager(getApplicationContext(),2);
                 mRecyclerView.setLayoutManager(mLayoutManager);
                 recAdapter = new RecAdapter(earthquakeList);
                 mRecyclerView.setAdapter(recAdapter);
+
+                if (earthquakeList.isEmpty()) {
+                    emptyView = findViewById(R.id.empty_view);
+                    emptyView.setVisibility(View.VISIBLE);
+                    emptyView.setText("Nedoslo k zadnemu zemetreseni");
+
+                }
 
 
             }
@@ -99,6 +125,18 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<Feed> call, Throwable t) {
                 Toast.makeText(getApplicationContext(), "Nefunguje", Toast.LENGTH_SHORT).show();
+
+                emptyView = findViewById(R.id.empty_view);
+                emptyView.setVisibility(View.VISIBLE);
+
+                if (t instanceof IOException) {
+                    emptyView.setText("Problem s internetem");
+                }
+                else {
+                    emptyView.setText("Problem neznamo kde !!!");
+                }
+
+
 
 
             }
