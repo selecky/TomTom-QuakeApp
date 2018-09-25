@@ -1,6 +1,7 @@
 package com.example.tomse.tomtom;
 
 import android.content.Context;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
@@ -10,6 +11,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -36,13 +38,19 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView mRecyclerView;
     private RecyclerView.Adapter recAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
-    private TextView emptyView;
+    private Button emptyView;
+    private int repeatIndex;
 
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
+
+
+
+        @Override
+        protected void onCreate (Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+
 
         final ProgressBar loadingCircle = findViewById(R.id.loading_spinner);
         loadingCircle.setVisibility(View.VISIBLE);
@@ -55,95 +63,105 @@ public class MainActivity extends AppCompatActivity {
 
         QuakeAPI quakeAPI = retrofit.create(QuakeAPI.class);
 
-        Call<Feed> call = quakeAPI.getData("geojson" ,"earthquake","time",6, 10);
-
-
-        call.enqueue(new Callback<Feed>() {
-            @Override
-            public void onResponse(Call<Feed> call, Response<Feed> response) {
-                Log.d(TAG, "Kapitanuv denik" + response.toString());
-                Log.d(TAG, "Kapitanuv denik" + response.body().toString());
-
-                ArrayList<Features> featuresList = response.body().getFeatures();
 
 
 
-                for (int i = 0; i<featuresList.size(); i++) {
+
+            Call<Feed> call = quakeAPI.getData("geojson", "earthquake", "time", 6, 10);
 
 
-                    Earthquake earthquake = new Earthquake(
-                            featuresList.get(i).getProperties().getMag(),
-                            featuresList.get(i).getProperties().getPlace(),
-                            featuresList.get(i).getProperties().getTime(),
-                            featuresList.get(i).getProperties().getUrl()
-                    );
+            call.enqueue(new Callback<Feed>() {
+                @Override
+                public void onResponse(Call<Feed> call, Response<Feed> response) {
+                    Log.d(TAG, "Kapitanuv denik" + response.toString());
+                    Log.d(TAG, "Kapitanuv denik" + response.body().toString());
 
-                    earthquakeList.add(earthquake);
+                    ArrayList<Features> featuresList = response.body().getFeatures();
 
-                }
 
-                String[] places = new String[earthquakeList.size()];
+                    for (int i = 0; i < featuresList.size(); i++) {
 
-                for (int i = 0; i < earthquakeList.size(); i++) {
-                    Log.d(TAG, "\n NaHovno " + earthquakeList.get(i).getLocation());
-                    places[i] = featuresList.get(i).getProperties().getPlace();
 
-                }
+                        Earthquake earthquake = new Earthquake(
+                                featuresList.get(i).getProperties().getMag(),
+                                featuresList.get(i).getProperties().getPlace(),
+                                featuresList.get(i).getProperties().getTime(),
+                                featuresList.get(i).getProperties().getUrl()
+                        );
+
+                        earthquakeList.add(earthquake);
+
+                    }
+
+                    String[] places = new String[earthquakeList.size()];
+
+                    for (int i = 0; i < earthquakeList.size(); i++) {
+                        Log.d(TAG, "\n NaHovno " + earthquakeList.get(i).getLocation());
+                        places[i] = featuresList.get(i).getProperties().getPlace();
+
+                    }
 
                /* ListView listView = findViewById(R.id.list);
                 ListAdapter quakeAdapter = new QuakeAdapter(getApplicationContext(), earthquakeList);
                 listView.setAdapter(quakeAdapter);*/
 
-                loadingCircle.setVisibility(View.GONE);
+                    loadingCircle.setVisibility(View.GONE);
 
-                //to see the loading circle for 5 seconds for testing purposes
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    //to see the loading circle for 5 seconds for testing purposes
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    mRecyclerView = findViewById(R.id.my_recycler_view);
+                    mRecyclerView.setHasFixedSize(true);
+                    mLayoutManager = new GridLayoutManager(getApplicationContext(), 2);
+                    mRecyclerView.setLayoutManager(mLayoutManager);
+                    recAdapter = new RecAdapter(earthquakeList);
+                    mRecyclerView.setAdapter(recAdapter);
+
+                    if (earthquakeList.isEmpty()) {
+                        emptyView = findViewById(R.id.empty_view_button);
+                        emptyView.setVisibility(View.VISIBLE);
+                        emptyView.setText("Nedoslo k zadnemu zemetreseni");
+
+                    }
+
+
                 }
 
-                mRecyclerView = findViewById(R.id.my_recycler_view);
-                mRecyclerView.setHasFixedSize(true);
-                mLayoutManager = new GridLayoutManager(getApplicationContext(),2);
-                mRecyclerView.setLayoutManager(mLayoutManager);
-                recAdapter = new RecAdapter(earthquakeList);
-                mRecyclerView.setAdapter(recAdapter);
 
-                if (earthquakeList.isEmpty()) {
-                    emptyView = findViewById(R.id.empty_view);
+                @Override
+                public void onFailure(Call<Feed> call, Throwable t) {
+                    Toast.makeText(getApplicationContext(), "Nefunguje", Toast.LENGTH_SHORT).show();
+
+                    loadingCircle.setVisibility(View.GONE);
+                    emptyView = findViewById(R.id.empty_view_button);
                     emptyView.setVisibility(View.VISIBLE);
-                    emptyView.setText("Nedoslo k zadnemu zemetreseni");
+
+
+                    if (t instanceof IOException) {
+                        emptyView.setText("Problem s internetem RETRY");
+                        emptyView.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                MainActivity.this.recreate();
+
+
+                            }
+                        });
+
+
+                    } else {
+                        emptyView.setText("Problem neznamo kde !!!");
+                    }
+
 
                 }
-
-
-            }
-
-
-
-            @Override
-            public void onFailure(Call<Feed> call, Throwable t) {
-                Toast.makeText(getApplicationContext(), "Nefunguje", Toast.LENGTH_SHORT).show();
-
-                emptyView = findViewById(R.id.empty_view);
-                emptyView.setVisibility(View.VISIBLE);
-
-                if (t instanceof IOException) {
-                    emptyView.setText("Problem s internetem");
-                }
-                else {
-                    emptyView.setText("Problem neznamo kde !!!");
-                }
-
-
-
-
-            }
-        });
-
-
+            });
 
 
     }
+
 }
