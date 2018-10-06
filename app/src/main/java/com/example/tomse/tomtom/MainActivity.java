@@ -1,6 +1,9 @@
 package com.example.tomse.tomtom;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -9,6 +12,8 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -39,8 +44,6 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView.Adapter recAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
     private Button emptyView;
-    private int repeatIndex;
-
 
 
 
@@ -49,6 +52,7 @@ public class MainActivity extends AppCompatActivity {
         protected void onCreate (Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
 
 
 
@@ -64,10 +68,28 @@ public class MainActivity extends AppCompatActivity {
         QuakeAPI quakeAPI = retrofit.create(QuakeAPI.class);
 
 
+            SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+            String minMagnitude = sharedPrefs.getString(
+                    getString(R.string.settings_min_magnitude_key),
+                    getString(R.string.settings_min_magnitude_default));
+
+            String startTime = sharedPrefs.getString(
+                    getString(R.string.settings_start_time_key),
+                    getString(R.string.settings_start_time_default));
+
+            String limit = sharedPrefs.getString(
+                    getString(R.string.settings_limit_key),
+                    getString(R.string.settings_limit_default));
+
+            String orderBy = sharedPrefs.getString(
+                    getString(R.string.settings_order_by_key),
+                    getString(R.string.settings_order_by_default));
 
 
 
-            Call<Feed> call = quakeAPI.getData("geojson", "earthquake", "time", 6, 10);
+
+
+            Call<Feed> call = quakeAPI.getData("geojson", "earthquake", orderBy, minMagnitude, limit, startTime);
 
 
             call.enqueue(new Callback<Feed>() {
@@ -109,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
 
                     //to see the loading circle for 5 seconds for testing purposes
                     try {
-                        Thread.sleep(2000);
+                        Thread.sleep(500);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -162,6 +184,26 @@ public class MainActivity extends AppCompatActivity {
             });
 
 
+
     }
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.action_settings) {
+            Intent settingsIntent = new Intent(this, SettingsActivity.class);
+            startActivity(settingsIntent);
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
 
 }

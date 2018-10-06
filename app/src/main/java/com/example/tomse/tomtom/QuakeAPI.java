@@ -16,9 +16,10 @@ public interface QuakeAPI {
     Call<Feed> getData(
             @Query("format") String geojson,
             @Query("eventtype") String earthquake,
-            @Query("orderby") String time,
-            @Query("minmag") Integer six,
-            @Query("limit") Integer ten
+            @Query("orderby") String orderby,
+            @Query("minmag") String minmag,
+            @Query("limit") String limit,
+            @Query("starttime") String starttime
     );
 
 
